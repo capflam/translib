@@ -1,0 +1,8 @@
+{application, @PACKAGE_NAME@}.
+{packages, []}.
+{modules,[
+          gen_trans,
+          lambda_expr,
+          recfun,
+          multiparser
+         ]}.

@@ -1,0 +1,20 @@
+% $Id$
+
+{application, @PACKAGE_NAME@,
+ [
+  {description,                 ""},
+  {vsn,                         "@PACKAGE_VERSION@"},
+  {modules,                     [
+                                 gen_trans,
+                                 lambda_expr,
+                                 recfun,
+                                 multiparser
+                                ]},
+  {registered,                  []},
+  {applications,                [
+                                 kernel, 
+                                 stdlib
+                                ]},
+  {mod,                         []}
+ ]
+}.

@@ -1,0 +1,16 @@
+% $Id$
+
+{
+	[
+		'@srcdir@/gen_trans',
+		'@srcdir@/lambda_expr',
+		'@srcdir@/recfun',
+		'@srcdir@/multiparser'
+	],
+	[
+		@EMKOPTS@,
+		{outdir, "@builddir@/../ebin"},
+		{i, "@top_srcdir@/include"},
+		{i, "@top_builddir@/include"}
+	]
+}.

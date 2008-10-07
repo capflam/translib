@@ -30,6 +30,84 @@
 %% functions. To deal with this goal and make the parsing easier, This
 %% module also implements the {@link gen_trans} behaviour.
 %%
+%% To perform this kind of transformation, we reserved the keyword
+%% `callee' that refers to the anonymous function itself. this keyword
+%% plays the role of a special function name with, obviously, the same
+%% number of arguments that the anonymous function referred
+%% to. Furthermore, to deal with anonymous functions nested in other
+%% ones, we hijacked the notation of a Mnesia record access inside a
+%% query to recursively call parent functions. So, the notation
+%% `(parent.)+callee' refers to parent anonymous functions.
+%%
+%% === Examples ===
+%%
+%% <ul> 
+%%   <li> A simple example: the factorial function. This recursive
+%%   anonymous function:
+%%     <div class="example">
+%% ```
+%% Fact = fun(0) -> 1;
+%%           (N) -> N * callee(N-1)
+%%        end,
+%% Fact(5). %% return 5! = 120
+%% '''
+%%     </div>
+%%
+%% is transformed by the module `recfun' in
+%%
+%%     <div class="example">
+%% ```
+%% Fact = (fun(Callee) ->
+%%                fun(0) -> 1;
+%%                   (N) -> N * (Callee(Callee))(N-1)
+%%                end
+%%         end)(fun(Callee) ->
+%%                      fun(0) -> 1;
+%%                         (N) -> N * (Callee(Callee))(N-1)
+%%                      end
+%%              end),
+%% Fact(5). %% return 5! = 120
+%% '''
+%%     </div>
+%%   </li>
+%%   <li> A trickier one: This recursive anonymous function:
+%%     <div class="example">
+%% ```
+%% Fact = fun(N) ->
+%%              G = fun(0) -> 1;
+%%                     (M) -> M * parent.callee(M-1)
+%%                  end,
+%%              G(N)
+%%        end,
+%% Fact(5). %% return 5! = 120
+%% '''
+%%     </div>
+%%
+%% is transformed by the module `recfun' in
+%%
+%%     <div class="example">
+%% ```
+%% Fact = (fun(Callee) ->
+%%                 fun(N) ->
+%%                         G = fun(0) -> 1;
+%%                                (M) -> M * (Callee(Callee))(M-1)
+%%                             end,
+%%                         G(N)
+%%                 end
+%%         end)(fun(Callee) ->
+%%                      fun(N) ->
+%%                              G = fun(0) -> 1;
+%%                                     (M) -> M * (Callee(Callee))(M-1)
+%%                                  end,
+%%                              G(N)
+%%                      end
+%%              end),
+%% Fact(5). %% return 5! = 120
+%% '''
+%%     </div>
+%%   </li>
+%% </ul>
+%%
 %% <br/>
 %% == EXPORTS ==
 %%<a name="parse_transform-2"> </a>

@@ -161,7 +161,7 @@ fi
 AC_ERLANG_CHECK_LIB([kernel], [], [AC_MSG_ERROR([kernel was not found!])])
 AC_ERLANG_CHECK_LIB([stdlib], [], [AC_MSG_ERROR([stdlib was not found!])])
 AC_ERLANG_CHECK_LIB([syntax_tools], [], [AC_MSG_ERROR([syntax_tools was not found!])])
-AC_ERLANG_CHECK_LIB([eunit], [], [AC_MSG_ERROR([eunit was not found!])])
+AC_ERLANG_CHECK_LIB([eunit], [], [AC_MSG_WARN([eunit was not found!])])
 
 
 dnl Determine directories for installation.
@@ -189,7 +189,8 @@ if test "x${ESCRIPT}" = "x"; then
 fi
 
 dnl Do we have all the tools for the testsuite to be used.
-if test "x${ERLANG_LIB_DIR_eunit}" != "x" -a "x${ESCRIPT}" != "x"; then
+if test "x${ERLANG_LIB_DIR_eunit}" != "xnot found" -a "x${ESCRIPT}" != "x"; then
+    AC_MSG_WARN([${ERLANG_LIB_DIR_eunit}])
 	enable_testsuite="yes"
 else
 	enable_testsuite="no"
@@ -214,9 +215,13 @@ AC_CONFIG_FILES([
 	testsuite/Makefile
 	Makefile
 ])
-AC_CONFIG_FILES([
-	testsuite/etest
-], [chmod +x testsuite/etest])
+
+if test "x${enable_testsuite}" = "xyes"; then
+   AC_CONFIG_FILES([
+        testsuite/etest
+   ], [chmod +x testsuite/etest])
+fi
+
 AC_OUTPUT
 
 dnl --------------------------------------------------

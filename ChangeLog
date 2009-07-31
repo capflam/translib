@@ -1,0 +1,8 @@
+2009-07-31  Christopher Faulet  <c.faulet@meetic-corp.com>
+
+	* gen_trans (start/3): Now, when we catch an error, we use the
+	filename to build the report if we find it, else, we use atom
+	'command_error'.
+
+	* ChangeLog: New file.
+

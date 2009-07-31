@@ -4,16 +4,16 @@
 %% compliance with the License. You should have received a copy of the
 %% Erlang Public License along with this software. If not, it can be
 %% retrieved via the world wide web at http://www.erlang.org/.
-%% 
+%%
 %% Software distributed under the License is distributed on an "AS IS"
 %% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %% the License for the specific language governing rights and limitations
 %% under the License.
-%% 
+%%
 %% The Initial Developer of the Original Code is Ericsson Utvecklings AB.
 %% Portions created by Ericsson are Copyright 1999, Ericsson Utvecklings
 %% AB. All Rights Reserved.''
-%% 
+%%
 %%     $Id$
 %% =====================================================================
 %%
@@ -101,7 +101,7 @@ parse_transform(Forms, Options) ->
 
 chain_parser([], Forms, _Options) ->
     Forms;
-chain_parser([Module|Chain], Forms, Options) -> 
+chain_parser([Module|Chain], Forms, Options) ->
     case gen_trans:start(Module, Forms, Options) of
         {ok, NewForms} ->
             chain_parser(Chain, NewForms, Options);

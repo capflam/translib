@@ -4,16 +4,16 @@
 %% compliance with the License. You should have received a copy of the
 %% Erlang Public License along with this software. If not, it can be
 %% retrieved via the world wide web at http://www.erlang.org/.
-%% 
+%%
 %% Software distributed under the License is distributed on an "AS IS"
 %% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %% the License for the specific language governing rights and limitations
 %% under the License.
-%% 
+%%
 %% The Initial Developer of the Original Code is Ericsson Utvecklings AB.
 %% Portions created by Ericsson are Copyright 1999, Ericsson Utvecklings
 %% AB. All Rights Reserved.''
-%% 
+%%
 %%     $Id$
 %% =====================================================================
 %%
@@ -24,7 +24,7 @@
 
 
 %% @doc Generic parse transformer behaviour.
-%% 
+%%
 %% A behaviour module for implementing a parse transformer of Erlang
 %% code. A transformer implemented using this module must define 3
 %% functions:
@@ -107,7 +107,7 @@
 %%     State, NewState = term()
 %%     '''
 %%   </div>
-%%   
+%%
 %%   This function is a generic parser that walk though the Erlang
 %%   abstract code `Form'. At each node, it delegate the processing to
 %%   `Module' by calling <a
@@ -129,12 +129,12 @@
 %%
 %% <br/>
 %% == CALLBACK FUNCTIONS ==
-%% 
+%%
 %% The following functions should be exported from a `gen_trans'
 %% callback module.
 %%
 %% === EXPORTS ===
-%% 
+%%
 %%<a name="Module:init-1"> </a>
 %%```
 %%Module:init(Options) -> {ok, State} | {stop, Reason}
@@ -154,7 +154,7 @@
 %%
 %%   `Options' is the `Options' argument provided to the start
 %%   function.
-%% 
+%%
 %%   If the initialization is successful, the function should return
 %%   `{ok, State}', where `State' is the internal state of the
 %%   `gen_trans'. If something goes wrong during the initialization
@@ -269,14 +269,18 @@ start(Parser, Forms, Options) ->
                     {ok, S} -> S;
                     {stop, R} -> exit({error, 0, R})
                 end,
-        
+
         {NewForms, NewState} = transform(Parser, Forms, State),
         Parser:terminate(normal, NewState),
         {ok, [erl_syntax:revert(T) || T <- lists:flatten(NewForms)]}
     catch
         exit:{error, Line, What} ->
-            [File|_] = [F || {attribute,_,file,{F,_}} <- Forms],
-            {error, [{File, [{Line, Parser, What}]}], []}
+            case [F || {attribute,_,file,{F,_}} <- Forms] of
+                [File|_] ->
+                    {error, [{File, [{Line, Parser, What}]}], []};
+                [] ->
+                    {error, [{command_error, [{Line, Parser, What}]}], []}
+            end
     end.
 
 %%====================================================================
@@ -293,7 +297,7 @@ transform(Parser, [Form|Tail], State, Result) ->
         {NewForm, NewState} ->
             transform(Parser, Tail, NewState, [NewForm]++Result);
         {BeforeForm, NewForm, AfterForm, NewState} ->
-            transform(Parser, Tail, NewState, 
+            transform(Parser, Tail, NewState,
                       [AfterForm, NewForm, BeforeForm]++Result)
     catch
         error:function_clause ->
@@ -314,7 +318,7 @@ transform(Parser, Form, State, []) when is_tuple(Form) ->
         Parser:parse(Form, State)
     catch
         error:function_clause ->
-            parse(Parser, Form, State);          
+            parse(Parser, Form, State);
         error:Reason ->
             Parser:terminate(Reason, State),
             report_error(Reason, Form);
@@ -480,7 +484,7 @@ parse(Parser, {bin_element, Line, RepP, RepSize, RepTSL}, State) ->
     {NewRepP, NewState} = transform(Parser, RepP, State),
     NewForm = {bin_element, Line, NewRepP, RepSize, RepTSL},
     {NewForm, NewState};
-           
+
 %% P_1 Op P_2
 parse(Parser, {op, Line, Op, Rep1, Rep2}, State) ->
     {NewRep1, NewState1} = transform(Parser, Rep1, State),
@@ -493,13 +497,13 @@ parse(Parser, {op, Line, Op, Rep0}, State) ->
     {NewRep0, NewState} = transform(Parser, Rep0, State),
     NewForm = {op, Line, Op, NewRep0},
     {NewForm, NewState};
-      
+
 %% #Name{Field_1=P_1, ..., Field_K=P_K}
 parse(Parser, {record, Line, Name, RepFields}, State) ->
     {NewRepFields, NewState} = transform(Parser, RepFields, State),
     NewForm = {record, Line, Name, NewRepFields},
     {NewForm, NewState};
-      
+
 %% E_0#Name{Field_1=P_1, ..., Field_K=P_K}
 parse(Parser, {record, Line, RepE0, Name, RepFields}, State) ->
     {NewRepE0, NewState1} = transform(Parser, RepE0, State),
@@ -573,7 +577,7 @@ parse(Parser, {'case', Line, RepE0, RepCcs}, State) ->
     {NewRepCcs, NewState2} = transform(Parser, RepCcs, NewState1),
     NewForm =  {'case', Line, NewRepE0, NewRepCcs},
     {NewForm, NewState2};
-    
+
 %% try B of Cc_1 ; ...; Cc_K catch Tc_1 ; ... ; Tc_N after A end,
 parse(Parser, {'try', Line, RepB, RepCcs, RepTcs, RepA}, State) ->
     {NewRepB, NewState1} = transform(Parser, RepB, State),
@@ -611,7 +615,7 @@ parse(Parser, {'fun', Line, {clauses, RepFcs}}, State) ->
     NewForm = {'fun', Line, {clauses, NewRepFcs}},
     {NewForm, NewState};
 
-%% query [E_0 || W_1, ..., W_k] 
+%% query [E_0 || W_1, ..., W_k]
 parse(Parser, {'query', Line, {lc, Line1, RepE0, RepWs}}, State) ->
     {NewRepE0, NewState1} = transform(Parser, RepE0, State),
     {NewRepWs, NewState2} = transform(Parser, RepWs, NewState1),
@@ -624,7 +628,7 @@ parse(Parser, {generate, Line, RepP, RepE}, State) ->
     {NewRepE, NewState2} = transform(Parser, RepE, NewState1),
     NewForm =  {generate, Line, NewRepP, NewRepE},
     {NewForm, NewState2};
-    
+
 %% P <= E
 parse(Parser, {b_generate, Line, RepP, RepE}, State) ->
     {NewRepP, NewState1} = transform(Parser, RepP, State),
@@ -635,13 +639,13 @@ parse(Parser, {b_generate, Line, RepP, RepE}, State) ->
 
 %%
 %%% Clauses
-%% 
+%%
 parse(Parser, {clause, Line, RepPatterns, RepGuards, RepBody}, State) ->
     {NewRepPatterns, NewState1} = transform(Parser, RepPatterns, State),
     {NewRepGuards, NewState2} = transform(Parser, RepGuards, NewState1),
     {NewRepBody, NewState3} = transform(Parser, RepBody, NewState2),
     NewForm = {clause, Line, NewRepPatterns, NewRepGuards, NewRepBody},
-    {NewForm, NewState3};    
+    {NewForm, NewState3};
 
 %%
 %%% Eof and others

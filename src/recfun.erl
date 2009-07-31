@@ -4,16 +4,16 @@
 %% compliance with the License. You should have received a copy of the
 %% Erlang Public License along with this software. If not, it can be
 %% retrieved via the world wide web at http://www.erlang.org/.
-%% 
+%%
 %% Software distributed under the License is distributed on an "AS IS"
 %% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %% the License for the specific language governing rights and limitations
 %% under the License.
-%% 
+%%
 %% The Initial Developer of the Original Code is Ericsson Utvecklings AB.
 %% Portions created by Ericsson are Copyright 1999, Ericsson Utvecklings
 %% AB. All Rights Reserved.''
-%% 
+%%
 %%     $Id$
 %% =====================================================================
 %%
@@ -41,7 +41,7 @@
 %%
 %% === Examples ===
 %%
-%% <ul> 
+%% <ul>
 %%   <li> A simple example: the factorial function. This recursive
 %%   anonymous function:
 %%     <div class="example">
@@ -260,13 +260,13 @@ parse({call, Line, {atom, Line, callee}, RepArgs},
                 N when N =:= FunInfos#fun_infos.arity ->
                     NewStack = [FunInfos#fun_infos{is_recursive=true}] ++ Rest,
                     TmpState = State#recfun_infos{fun_stack=NewStack},
-                    
+
                     {NewRepArgs, NewState} = parse(RepArgs, TmpState),
 
-                    NewForm = make_recursive_call(FunInfos#fun_infos.ref, 
-                                                  Line, 
+                    NewForm = make_recursive_call(FunInfos#fun_infos.ref,
+                                                  Line,
                                                   NewRepArgs),
-                    
+
                     {NewForm, NewState};
                 _ ->
                     erlang:error(?ERR_BADARITY)
@@ -279,18 +279,18 @@ parse({call, Line, {record_field, Line, RepP, {atom, Line, callee}}, RepArgs},
       #recfun_infos{fun_stack=Stack}=State) ->
     case is_recursive_call(RepP) of
         {true, Deep} when Deep =< length(Stack) ->
-            FunInfos = lists:nth(Deep, Stack),            
+            FunInfos = lists:nth(Deep, Stack),
             case length(RepArgs) of
                 N when N =:= FunInfos#fun_infos.arity ->
                     NewStack = lists:keyreplace(
-                                 FunInfos#fun_infos.ref, 2, 
+                                 FunInfos#fun_infos.ref, 2,
                                  Stack,
                                  FunInfos#fun_infos{is_recursive=true}
                                 ),
                     TmpState = State#recfun_infos{fun_stack=NewStack},
-                    
+
                     {NewRepArgs, NewState} = parse(RepArgs, TmpState),
-                    
+
                     NewForm = make_recursive_call(FunInfos#fun_infos.ref, Line,
                                                   NewRepArgs),
                     {NewForm, NewState};
@@ -310,10 +310,10 @@ parse({'fun', Line, {clauses, RepFcs}}=Form, State) ->
                           is_recursive=false},
     Stack = [FunInfos] ++ State#recfun_infos.fun_stack,
     {NewRepFcs, TmpState} = parse(RepFcs, State#recfun_infos{fun_stack=Stack}),
-    
+
     NewStack = TmpState#recfun_infos.fun_stack,
     NewFunInfos = hd(NewStack),
-    NewForm = 
+    NewForm =
         case NewFunInfos#fun_infos.is_recursive of
             true ->
                 make_recursive_fun(NewFunInfos#fun_infos.ref, Line, NewRepFcs);
@@ -355,11 +355,11 @@ make_recursive_call(Ref, Pos, Args) ->
 
 make_recursive_fun(Ref, Pos, Clauses) ->
     Var = syntax_tree(variable, Pos, [make_var(Ref)]),
-    C = syntax_tree(clause, Pos, 
+    C = syntax_tree(clause, Pos,
                     [[Var], [], [syntax_tree(fun_expr, Pos, [Clauses])]]),
     F = syntax_tree(fun_expr, Pos, [[C]]),
     syntax_tree(application, Pos, [F, [F]]).
- 
+
 make_var(Ref) ->
     list_to_atom(?VAR_BASENAME ++ erlang:ref_to_list(Ref)).
 

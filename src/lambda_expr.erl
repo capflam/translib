@@ -4,16 +4,16 @@
 %% compliance with the License. You should have received a copy of the
 %% Erlang Public License along with this software. If not, it can be
 %% retrieved via the world wide web at http://www.erlang.org/.
-%% 
+%%
 %% Software distributed under the License is distributed on an "AS IS"
 %% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %% the License for the specific language governing rights and limitations
 %% under the License.
-%% 
+%%
 %% The Initial Developer of the Original Code is Ericsson Utvecklings AB.
 %% Portions created by Ericsson are Copyright 1999, Ericsson Utvecklings
 %% AB. All Rights Reserved.''
-%% 
+%%
 %%     $Id$
 %% =====================================================================
 %%
@@ -30,6 +30,7 @@
 %% and composistion of functions expressions. To deal with this goal
 %% and make the parsing easier, This module also implements the
 %% {@link gen_trans} behaviour.
+%%
 %%
 %%
 %% <br/>
@@ -91,7 +92,7 @@
 %%      <li>`invalid_placeholder_number'. Placeholder _0 is illegal.</li>
 %%      <li>Other `ErrCode'. Unknown error: `ErrCode'.</li>
 %%   </ul>
-%% 
+%%
 %% </div>
 %%
 %%
@@ -189,7 +190,7 @@ parse({call, Line, {atom, Line, lambda}, [Expr]}, _State) ->
     %% Check if Expr is a lambda expression or not
     case is_lambda_expr([Expr]) of
         true ->
-            {LambdaExpr, _NewState} = 
+            {LambdaExpr, _NewState} =
                 parse(Expr, #lambda_infos{in_lambda_expr=false}),
             {LambdaExpr, #lambda_infos{}};
         false ->
@@ -203,24 +204,24 @@ parse({call, Line, RepE0, Reps}=Form, #lambda_infos{in_lambda_expr=false}) ->
     case is_lambda_expr(Reps) of
         true ->
             Pattern = lambda_expr_pattern(Line, Reps),
-            
+
             %% Search some inner lambda expressions
             NewReps = lists:map(
                         fun(Rep) ->
-                                {NewRep, _} = 
+                                {NewRep, _} =
                                     parse(Rep,
                                           #lambda_infos{in_lambda_expr=true}),
                                 NewRep
                         end, Reps
                        ),
-            
+
             %% Build the syntax tree of the lambda expression
             Call = syntax_tree(application, Line, [RepE0, NewReps]),
             Clause = syntax_tree(clause, Line, [Pattern, [], [Call]]),
             NewForm = syntax_tree(fun_expr, Line, [[Clause]]),
             {NewForm, #lambda_infos{}};
         false ->
-            gen_trans:parse(?MODULE, Form, #lambda_infos{}) 
+            gen_trans:parse(?MODULE, Form, #lambda_infos{})
     end;
 
 
@@ -236,7 +237,7 @@ parse({op, Line, Op, P1, P2}=Form, #lambda_infos{in_lambda_expr=false}) ->
             {NewP2, _} = parse(P2, #lambda_infos{in_lambda_expr=true}),
 
             %% Build the syntax tree of the lambda expression
-            InfixOp = syntax_tree(infix_expr, Line, 
+            InfixOp = syntax_tree(infix_expr, Line,
                                   [NewP1, erl_syntax:operator(Op), NewP2]),
             Clause = syntax_tree(clause, Line, [Pattern, [], [InfixOp]]),
             NewForm = syntax_tree(fun_expr, Line, [[Clause]]),
@@ -251,12 +252,12 @@ parse({op, Line, Op, P}=Form, #lambda_infos{in_lambda_expr=false}) ->
     case is_lambda_expr([P]) of
         true ->
             Pattern = lambda_expr_pattern(Line, [P]),
-            
+
             %% Search some inner lambda expressions
             {NewP, _} = parse(P, #lambda_infos{in_lambda_expr=true}),
-            
+
             %% Build the syntax tree of the lambda expression
-            PrefixOp = syntax_tree(prefix_expr, Line, 
+            PrefixOp = syntax_tree(prefix_expr, Line,
                                    [erl_syntax:operator(Op), NewP]),
             Clause = syntax_tree(clause, Line, [Pattern, [], [PrefixOp]]),
             NewForm = syntax_tree(fun_expr, Line, [[Clause]]),
@@ -284,7 +285,7 @@ parse(Form, State) ->
 %%====================================================================
 %% Test if a list of expressions contains any placeholders. If yes, the
 %% parent expression is a lambda expression
-is_lambda_expr([]) -> 
+is_lambda_expr([]) ->
     false;
 is_lambda_expr([{var, Line, V}|T]) ->
     case is_placeholder({var, Line, V}) of
@@ -303,7 +304,7 @@ is_lambda_expr([{op, _Line, _Op, P1, P2}|T]) ->
     is_lambda_expr([P1,P2]) orelse is_lambda_expr(T);
 is_lambda_expr([{op, _Line, _Op, P}|T]) ->
     is_lambda_expr([P]) orelse is_lambda_expr(T);
-is_lambda_expr([_H|T]) -> 
+is_lambda_expr([_H|T]) ->
     is_lambda_expr(T).
 
 
@@ -313,7 +314,7 @@ lambda_expr_pattern(Line, Reps) ->
     N = get_max_placeholder(Reps, 0),
     case N  > 0 of
         true ->
-            lists:map(fun(X) -> 
+            lists:map(fun(X) ->
                               V = list_to_atom("_" ++ integer_to_list(X)),
                               {var, Line, V}
                       end, lists:seq(1, N));

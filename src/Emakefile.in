@@ -5,7 +5,9 @@
 		'@srcdir@/gen_trans',
 		'@srcdir@/lambda_expr',
 		'@srcdir@/recfun',
-		'@srcdir@/multiparser'
+		'@srcdir@/multiparser',
+		'@srcdir@/clone_module',
+		'@srcdir@/transhell'
 	],
 	[
 		@EMKOPTS@,

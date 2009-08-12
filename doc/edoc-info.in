@@ -4,5 +4,7 @@
           gen_trans,
           lambda_expr,
           recfun,
-          multiparser
+          multiparser,
+          clone_module,
+          transhell
          ]}.

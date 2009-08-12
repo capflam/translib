@@ -4,7 +4,7 @@ dnl ------------------------------------------------------------------
 dnl Autoconf initialisation.
 dnl ------------------------------------------------------------------
 
-AC_INIT([translib], [0.1.0], [christopher.faulet@capflam.org], [translib])
+AC_INIT([translib], [0.2.0], [christopher.faulet@capflam.org], [translib])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([ac-aux])
 
@@ -184,7 +184,7 @@ dnl Check for escript(1).
 dnl Should we look first In Erlang's ROOT directory?
 dnl     Eg: [${ERLANG_ROOT_DIR}/bin${PATH_SEPARATOR}${PATH}]
 if test "x${ESCRIPT}" = "x"; then
-        AC_PATH_PROG([ESCRIPT], [escript], [], 
+        AC_PATH_PROG([ESCRIPT], [escript], [],
                      [${ERLANG_ROOT_DIR}/bin${PATH_SEPARATOR}${PATH}])
 fi
 

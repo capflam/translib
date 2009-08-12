@@ -1,5 +1,14 @@
 2009-08-12  Christopher Faulet  <c.faulet@meetic-corp.com>
 
+	* Version 0.2.0
+
+	* src/clone_module.erl: New parse transformer that clones Erlang
+	modules.
+	* src/transhell.erl: New module. It is a clone of the Erlang shell
+	and it uses the parse transformer clone_module.
+
+2009-08-12  Christopher Faulet  <c.faulet@meetic-corp.com>
+
 	* src/gen_trans.erl, src/multiparser.erl: Documentation updated.
 
 	* src/lambda_expr.erl: Rules about the keyword 'lambda' are

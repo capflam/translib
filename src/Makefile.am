@@ -3,7 +3,9 @@
 EXTRA_DIST = 	gen_trans.erl 	\
 				lambda_expr.erl \
 				recfun.erl		\
-				multiparser.erl
+				multiparser.erl \
+				clone_module.erl\
+				transhell.erl
 
 all-local:
 	@$(ERL) -noshell -pa @top_builddir@/ebin	\

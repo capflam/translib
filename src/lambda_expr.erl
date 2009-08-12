@@ -22,14 +22,13 @@
 %% @version {@vsn} - {@date}
 %% @end
 
-%% @doc Parse_transform that simplifies the partial application and
-%% the composistion of functions in Erlang.
+%% @doc Parse transformer that simplifies the partial application and the
+%% composistion of functions in Erlang.
 %%
-%% This module implements the parse_transform that modifies the
-%% semantic of Erlang to simplify the writing of partial application
-%% and composistion of functions expressions. To deal with this goal
-%% and make the parsing easier, This module also implements the
-%% {@link gen_trans} behaviour.
+%% Performs parse transformion that modifies the semantic of Erlang to simplify
+%% the writing of partial application and composistion of functions
+%% expressions. To deal with this goal and make the parsing easier, This module
+%% also implements the {@link gen_trans} behaviour.
 %%
 %%
 %%
@@ -37,7 +36,7 @@
 %% == EXPORTS ==
 %%<a name="parse_transform-2"> </a>
 %%```
-%%parse_transform(Forms, Options) -> {ok, NewForms} | {error, Errors, []}
+%%parse_transform(Forms, Options) -> NewForms | {error, Errors, []}
 %%'''
 %% <div class="REFBODY">
 %%   Types:
@@ -51,18 +50,16 @@
 %%     '''
 %%   </div>
 %%
-%%   Implements the actual transformation at compile time. This
-%%   function is called by the compiler to do the source code
-%%   transformation if and when the option `{parse_transform,
-%%   lambda_expr}' is passed to the compiler. This function starts a
-%%   new {@link gen_trans} by calling {@link gen_trans:start/3} with
-%%   `lambda_expr' as callback module.
+%%   Implements the actual transformation at compile time. This function is
+%%   called by the compiler to do the source code transformation if and when the
+%%   option `{parse_transform, lambda_expr}' is passed to the compiler. This
+%%   function starts a new {@link gen_trans} by calling {@link
+%%   gen_trans:start/3} with `lambda_expr' as callback module.
 %%
-%%   If the abstract code format is successfully parsed, the function
-%%   returns `{ok, NewForms}'. if it fails the function returns
-%%   `{error, Errors, []}'.
+%%   If the abstract code format is successfully parsed, the function returns
+%%   `NewForms'. if it fails the function returns `{error, Errors, []}'.
 %%
-%%   See <a href="http://www.erlang.org/doc/man/compile.html">compile(3)</a>.
+%%   See [http://www.erlang.org/doc/man/compile.html compile(3)].
 %%
 %% </div>
 %%
@@ -79,15 +76,14 @@
 %%     '''
 %%   </div>
 %%
-%%   Takes an error code returned by one of the other functions in the
-%%   module and creates a textual description of the error. The
-%%   `ErrCode' can be either of the following terms. The
-%%   `format_error/1' function returns a descriptive string which
-%%   describes the error.
+%%   Takes an error code returned by one of the other functions in the module
+%%   and creates a textual description of the error. The `ErrCode' can be either
+%%   of the following terms. The `format_error/1' function returns a descriptive
+%%   string which describes the error.
 %%
 %%   <ul>
-%%      <li>`invalid_lambda_expr'. Parameter of lambda/1 is not a lambda expression.</li>
-%%      <li>`reserved_lambda_usage'. Atom 'lambda': reserved syntax.</li>
+%%      <li>`lambda_expr_badarg'. Argument of lambda/1 is not a lambda expression.</li>
+%%      <li>`{lambda_expr_badarity, N}'. lambda/1 called with `N' arguments. (`N' /= 1) </li>
 %%      <li>`{reserved_placeholder_usage, Var}'. Variable `Var': syntax reserved for placeholders.</li>
 %%      <li>`invalid_placeholder_number'. Placeholder _0 is illegal.</li>
 %%      <li>Other `ErrCode'. Unknown error: `ErrCode'.</li>
@@ -99,16 +95,14 @@
 %% <br/>
 %% == Error Information ==
 %%
-%% The `ErrorInfo' mentioned above is the standard `ErrorInfo'
-%% structure which is returned from `lambda_expr' module. It has the
-%% following format:
+%% The `ErrorInfo' mentioned above is the standard `ErrorInfo' structure which
+%% is returned from `lambda_expr' module. It has the following format:
 %%
 %% <div class="example">
 %%```{ErrorLine, lambda_expr, ErrorDescriptor}'''
 %% </div>
 %%
-%% A string which describes the error is obtained with the following
-%% call:
+%% A string which describes the error is obtained with the following call:
 %%
 %% <div class="example">
 %%```apply(lambda_expr, format_error, ErrorDescriptor)'''
@@ -134,8 +128,8 @@
         ]).
 
 
--define(ERR_LAMBDA_FUN,         invalid_lambda_expr).
--define(ERR_LAMBDA_NAME,        reserved_lambda_usage).
+-define(ERR_LAMBDA_FUN_ARG,     lambda_expr_badarg).
+-define(ERR_LAMBDA_FUN_ARITY,   lambda_expr_badarity).
 -define(ERR_PLACEHOLDERS_NAME,  reserved_placeholder_usage).
 -define(ERR_PLACEHOLDERS_ZERO,  invalid_placeholder_number).
 
@@ -156,10 +150,12 @@ parse_transform(Forms, Options) ->
 
 
 %% @hidden
-format_error(?ERR_LAMBDA_FUN) ->
-    "Parameter of lambda/1 is not a lambda expression";
-format_error(?ERR_LAMBDA_NAME) ->
-    "Atom 'lambda': reserved syntax";
+format_error(?ERR_LAMBDA_FUN_ARG) ->
+    "Argument of lambda/1 is not a lambda expression";
+format_error({?ERR_LAMBDA_FUN_ARITY, 0}) ->
+    "lambda/1 called with no arguments";
+format_error({?ERR_LAMBDA_FUN_ARITY, A}) ->
+    lists:flatten(io_lib:format("lambda/1 called with ~p arguments", [A]));
 format_error({?ERR_PLACEHOLDERS_NAME, V}) ->
     lists:flatten(
       io_lib:format("Variable ~w: syntax reserved for placeholders", [V])
@@ -194,8 +190,13 @@ parse({call, Line, {atom, Line, lambda}, [Expr]}, _State) ->
                 parse(Expr, #lambda_infos{in_lambda_expr=false}),
             {LambdaExpr, #lambda_infos{}};
         false ->
-            erlang:error(?ERR_LAMBDA_FUN)
+            erlang:error(?ERR_LAMBDA_FUN_ARG)
     end;
+parse({call, Line, {atom, Line, lambda}, [_|_]=Exprs}, _State) ->
+    erlang:error({?ERR_LAMBDA_FUN_ARITY, length(Exprs)});
+parse({call, Line, {atom, Line, lambda}, []}, _State) ->
+    erlang:error({?ERR_LAMBDA_FUN_ARITY, 0});
+
 
 
 %% Other calls: see if it is a lambda expression and build the
@@ -203,6 +204,9 @@ parse({call, Line, {atom, Line, lambda}, [Expr]}, _State) ->
 parse({call, Line, RepE0, Reps}=Form, #lambda_infos{in_lambda_expr=false}) ->
     case is_lambda_expr(Reps) of
         true ->
+            {NewRepE0, _NewState} =
+                parse(RepE0, #lambda_infos{in_lambda_expr=false}),
+
             Pattern = lambda_expr_pattern(Line, Reps),
 
             %% Search some inner lambda expressions
@@ -216,7 +220,7 @@ parse({call, Line, RepE0, Reps}=Form, #lambda_infos{in_lambda_expr=false}) ->
                        ),
 
             %% Build the syntax tree of the lambda expression
-            Call = syntax_tree(application, Line, [RepE0, NewReps]),
+            Call = syntax_tree(application, Line, [NewRepE0, NewReps]),
             Clause = syntax_tree(clause, Line, [Pattern, [], [Call]]),
             NewForm = syntax_tree(fun_expr, Line, [[Clause]]),
             {NewForm, #lambda_infos{}};
@@ -266,9 +270,6 @@ parse({op, Line, Op, P}=Form, #lambda_infos{in_lambda_expr=false}) ->
             gen_trans:parse(?MODULE, Form, #lambda_infos{})
     end;
 
-
-parse({atom, _, lambda}, _State) ->
-    erlang:error(?ERR_LAMBDA_NAME);
 
 parse({var, _, V}=Form, #lambda_infos{in_lambda_expr=false}=State) ->
     case is_placeholder(Form) of

@@ -22,21 +22,20 @@
 %% @version {@vsn} - {@date}
 %% @end
 
-%% @doc Parse_transform that makes possible to easily write recursive
+%% @doc Parse transformer that makes possible to easily write recursive
 %% anonymous function.
 %%
-%% This module implements the parse_transform that modifies the
-%% semantic of Erlang to simplify the writing of recursive anonymous
-%% functions. To deal with this goal and make the parsing easier, This
-%% module also implements the {@link gen_trans} behaviour.
+%% Performs parse transformation that modifies the semantic of Erlang to
+%% simplify the writing of recursive anonymous functions. To deal with this goal
+%% and make the parsing easier, This module also implements the {@link
+%% gen_trans} behaviour.
 %%
-%% To perform this kind of transformation, we reserved the keyword
-%% `callee' that refers to the anonymous function itself. this keyword
-%% plays the role of a special function name with, obviously, the same
-%% number of arguments that the anonymous function referred
-%% to. Furthermore, to deal with anonymous functions nested in other
-%% ones, we hijacked the notation of a Mnesia record access inside a
-%% query to recursively call parent functions. So, the notation
+%% To perform this kind of transformation, we reserved the function name
+%% `callee' that refers to the anonymous function itself. this keyword plays the
+%% role of a special function name with, obviously, the same number of arguments
+%% that the anonymous function referred to. Furthermore, to deal with anonymous
+%% functions nested in other ones, we hijacked the notation of a Mnesia record
+%% access inside a query to recursively call parent functions. So, the notation
 %% `(parent.)+callee' refers to parent anonymous functions.
 %%
 %% === Examples ===
@@ -112,7 +111,7 @@
 %% == EXPORTS ==
 %%<a name="parse_transform-2"> </a>
 %%```
-%%parse_transform(Forms, Options) -> {ok, NewForms} | {error, Errors, []}
+%%parse_transform(Forms, Options) -> NewForms | {error, Errors, []}
 %%'''
 %% <div class="REFBODY">
 %%   Types:
@@ -126,18 +125,16 @@
 %%     '''
 %%   </div>
 %%
-%%   Implements the actual transformation at compile time. This
-%%   function is called by the compiler to do the source code
-%%   transformation if and when the option `{parse_transform, recfun}'
-%%   is passed to the compiler. This function starts a new {@link
-%%   gen_trans} by calling {@link gen_trans:start/3} with `recfun' as
-%%   callback module.
+%%   Implements the actual transformation at compile time. This function is
+%%   called by the compiler to do the source code transformation if and when the
+%%   option `{parse_transform, recfun}' is passed to the compiler. This function
+%%   starts a new {@link gen_trans} by calling {@link gen_trans:start/3} with
+%%   `recfun' as callback module.
 %%
-%%   If the abstract code format is successfully parsed, the function
-%%   returns `{ok, NewForms}'. if it fails the function returns
-%%   `{error, Errors, []}'.
+%%   If the abstract code format is successfully parsed, the function returns
+%%   `NewForms'. if it fails the function returns `{error, Errors, []}'.
 %%
-%%   See <a href="http://www.erlang.org/doc/man/compile.html">compile(3)</a>.
+%%   See [http://www.erlang.org/doc/man/compile.html compile(3)].
 %%
 %% </div>
 %%
@@ -154,15 +151,15 @@
 %%     '''
 %%   </div>
 %%
-%%   Takes an error code returned by one of the other functions in the
-%%   module and creates a textual description of the error. `ErrCode'
-%%   can be either of the following terms. The `format_error/1'
-%%   function returns a descriptive string which describes the error.
+%%   Takes an error code returned by one of the other functions in the module
+%%   and creates a textual description of the error. `ErrCode' can be either of
+%%   the following terms. The `format_error/1' function returns a descriptive
+%%   string which describes the error.
 %%
 %%   <ul>
-%%      <li>`reserved_callee_usage'. Atom `callee': reserved syntax.</li>
+%%      <li>`reserved_callee_usage'. Function `callee(...)': reserved syntax.</li>
 %%      <li>`recfun_badrec'. Bad recursive call.</li>
-%%      <li>`recfun_badarity'. Bad recursive function arity.</li>
+%%      <li>`{recfun_badarity, A0, A1}'. Interpreted function with arity `A0' called with `A1' arguments</li>
 %%      <li>Other `ErrCode'. Unknown error: `ErrCode'.</li>
 %%   </ul>
 %%
@@ -172,16 +169,14 @@
 %% <br/>
 %% == Error Information ==
 %%
-%% The `ErrorInfo' mentioned above is the standard `ErrorInfo'
-%% structure which is returned from `recfun' module. It has the
-%% following format:
+%% The `ErrorInfo' mentioned above is the standard `ErrorInfo' structure which
+%% is returned from `recfun' module. It has the following format:
 %%
 %% <div class="example">
 %%```{ErrorLine, recfun, ErrorDescriptor}'''
 %% </div>
 %%
-%% A string which describes the error is obtained with the following
-%% call:
+%% A string which describes the error is obtained with the following call:
 %%
 %% <div class="example">
 %%```apply(recfun, format_error, ErrorDescriptor)'''
@@ -230,12 +225,20 @@ parse_transform(Forms, Options) ->
 
 
 %% @hidden
-format_error(?ERR_BADARITY) ->
-    "Bad recursive function arity";
+format_error({?ERR_BADARITY, A1, 0}) ->
+    lists:flatten(
+      io_lib:format("Interpreted function with arity ~p called with 0 argument",
+                    [A1])
+     );
+format_error({?ERR_BADARITY, A1, A2}) ->
+    lists:flatten(
+      io_lib:format("Interpreted function with arity ~p called with ~p arguments",
+                    [A1, A2])
+     );
 format_error(?ERR_BADREC) ->
     "Bad recursive call";
 format_error(?ERR_CALLEE_NAME) ->
-    "Atom 'callee': reserved syntax";
+    "Function 'callee(...)': reserved syntax";
 format_error(Error) ->
     lists:flatten(io_lib:format("Unknown error: ~w", [Error])).
 
@@ -268,8 +271,8 @@ parse({call, Line, {atom, Line, callee}, RepArgs},
                                                   NewRepArgs),
 
                     {NewForm, NewState};
-                _ ->
-                    erlang:error(?ERR_BADARITY)
+                M ->
+                    erlang:error({?ERR_BADARITY, FunInfos#fun_infos.arity, M})
             end;
         [] ->
             erlang:error(?ERR_CALLEE_NAME)
@@ -294,8 +297,8 @@ parse({call, Line, {record_field, Line, RepP, {atom, Line, callee}}, RepArgs},
                     NewForm = make_recursive_call(FunInfos#fun_infos.ref, Line,
                                                   NewRepArgs),
                     {NewForm, NewState};
-                _ ->
-                    erlang:error(?ERR_BADARITY)
+                M ->
+                    erlang:error({?ERR_BADARITY, FunInfos#fun_infos.arity, M})
             end;
         {true, _Deep} ->
             erlang:error(?ERR_BADREC);
@@ -322,9 +325,6 @@ parse({'fun', Line, {clauses, RepFcs}}=Form, State) ->
         end,
     NewState = TmpState#recfun_infos{fun_stack=tl(NewStack)},
     {NewForm, NewState};
-
-parse({atom, _Line, callee}, _State) ->
-    erlang:error(?ERR_CALLEE_NAME);
 
 %% Forward other forms to the generic parser
 parse(Form, State) ->

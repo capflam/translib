@@ -25,9 +25,8 @@
 
 %% @doc Generic parse transformer behaviour.
 %%
-%% A behaviour module for implementing a parse transformer of Erlang
-%% code. A transformer implemented using this module must define 3
-%% functions:
+%% A behaviour module for implementing a parse transformer of Erlang code. A
+%% transformer implemented using this module must define 3 functions:
 %%
 %% <ul>
 %%  <li><a href="#Module:init-1">Module:init/1</a></li>
@@ -35,10 +34,9 @@
 %%  <li><a href="#Module:terminate-2">Module:terminate/2</a></li>
 %% </ul>
 %%
-%% A `gen_trans' assumes all specific parts to be located in a
-%% callback module exporting a pre-defined set of functions. The
-%% relationship between the behaviour functions and the callback
-%% functions can be illustrated as follows:
+%% A `gen_trans' assumes all specific parts to be located in a callback module
+%% exporting a pre-defined set of functions. The relationship between the
+%% behaviour functions and the callback functions can be illustrated as follows:
 %%
 %% <div class="example">
 %%```
@@ -53,8 +51,7 @@
 %%'''
 %% </div>
 %%
-%% If a callback function throw an error, the `gen_trans' will
-%% terminate.
+%% If a callback function throw an error, the `gen_trans' will terminate.
 %%
 %% <br/>
 %% == EXPORTS ==
@@ -75,22 +72,19 @@
 %%     '''
 %%   </div>
 %%
-%%   Start the transformer. The first thing this function does is to
-%%   call <a href="#Module:init-1">Module:init/1</a> to initialize the
-%%   internal state of the transformer.
+%%   Start the transformer. The first thing this function does is to call <a
+%%   href="#Module:init-1">Module:init/1</a> to initialize the internal state of
+%%   the transformer.
 %%
-%%   `Module' is the name of the callback module. `Forms' is the
-%%   Erlang abstract code format. `Options' is an arbitrary term which
-%%   passed as the argument to <a
-%%   href="#Module:init-1">Module:init/1</a>. If the transformer is
-%%   called by the compiler, then `Options' could contain the compiler
-%%   options.
+%%   `Module' is the name of the callback module. `Forms' is the Erlang abstract
+%%   code format. `Options' is an arbitrary term which passed as the argument to
+%%   <a href="#Module:init-1">Module:init/1</a>. If the transformer is called by
+%%   the compiler, then `Options' could contain the compiler options.
 %%
-%%   If the abstract code format is successfully parsed, the function
-%%   returns `{ok, NewForms}'. if it fails the function returns
-%%   `{error, Errors, []}'.
+%%   If the abstract code format is successfully parsed, the function returns
+%%   `{ok, NewForms}'. if it fails the function returns `{error, Errors, []}'.
 %%
-%%   See <a href="http://www.erlang.org/doc/man/compile.html">compile(3)</a>.
+%%   See [http://www.erlang.org/doc/man/compile.html compile(3)].
 %%
 %% </div>
 %%
@@ -103,35 +97,33 @@
 %%   <div class="REFTYPES">
 %%     ```
 %%     Module = atom()
-%%     Form, NewForm = erlang_form()
+%%     Form, NewForm = erlang_form() | [erlang_form()]
 %%     State, NewState = term()
 %%     '''
 %%   </div>
 %%
-%%   This function is a generic parser that walk though the Erlang
-%%   abstract code `Form'. At each node, it delegate the processing to
-%%   `Module' by calling <a
-%%   href="#Module:parse-2">Module:parse/2</a>. `State' is the
-%%   internal state of the `gen_trans'.
+%%   This function is a generic parser that walk though the Erlang abstract code
+%%   `Form'. At each node, it delegate the processing to `Module' by calling <a
+%%   href="#Module:parse-2">Module:parse/2</a>. `State' is the internal state of
+%%   the `gen_trans'.
 %%
 %%   Whenever a `gen_trans' is started using <a
-%%   href="#start-3">gen_trans:start/3</a>, this function is called on
-%%   each element of the `Forms' argument provided to the start
+%%   href="#start-3">gen_trans:start/3</a>, this function is called on each
+%%   element of the `Forms' argument provided to the start
 %%   function. Furthermore, the callback function <a
-%%   href="#Module:parse-2">Module:parse/2</a> should use it to
-%%   simplified the parsing.
+%%   href="#Module:parse-2">Module:parse/2</a> should use it to simplified the
+%%   parsing.
 %%
-%%   See <a
-%%   href="http://www.erlang.org/doc/apps/erts/absform.html">The
-%%   Abstract Format</a> in ERTS User's Guide.
+%%   See [http://www.erlang.org/doc/apps/erts/absform.html The Abstract Format]
+%%   in ERTS User's Guide.
 %%
 %% </div>
 %%
 %% <br/>
 %% == CALLBACK FUNCTIONS ==
 %%
-%% The following functions should be exported from a `gen_trans'
-%% callback module.
+%% The following functions should be exported from a `gen_trans' callback
+%% module.
 %%
 %% === EXPORTS ===
 %%
@@ -152,14 +144,12 @@
 %%   Whenever a `gen_trans' is started using <a
 %%   href="#start-3">gen_trans:start/3</a>, this function is called.
 %%
-%%   `Options' is the `Options' argument provided to the start
-%%   function.
+%%   `Options' is the `Options' argument provided to the start function.
 %%
-%%   If the initialization is successful, the function should return
-%%   `{ok, State}', where `State' is the internal state of the
-%%   `gen_trans'. If something goes wrong during the initialization
-%%   the function should return `{stop, Reason}' where `Reason' is any
-%%   term.
+%%   If the initialization is successful, the function should return `{ok,
+%%   State}', where `State' is the internal state of the `gen_trans'. If
+%%   something goes wrong during the initialization the function should return
+%%   `{stop, Reason}' where `Reason' is any term.
 %%
 %% </div>
 %%
@@ -173,14 +163,14 @@
 %%   Types:
 %%   <div class="REFTYPES">
 %%     ```
-%%     Form, NewForm = erlang_form()
-%%     BeforeForm, AfterForm = erlang_form()
+%%     Form, NewForm = erlang_form() | [erlang_form()]
+%%     BeforeForm, AfterForm = erlang_form() | [erlang_form()]
 %%     State, NewState = term()
 %%     '''
 %%   </div>
 %%
-%%   At each step of the parsing, This function is called by the
-%%   function <a href="#parse-3">gen_trans:parse/3</a>.
+%%   At each step of the parsing, This function is called by the function <a
+%%   href="#parse-3">gen_trans:parse/3</a>.
 %%
 %% </div>
 %%
@@ -198,35 +188,31 @@
 %%     '''
 %%   </div>
 %%
-%%   This function is called by a `gen_trans' when it is about to
-%%   terminate. It should be the opposite of <a
-%%   href="#Module:init-1">Module:init/1</a> and do any necessary
-%%   cleaning up. When it returns, the `gen_trans' terminates with
+%%   This function is called by a `gen_trans' when it is about to terminate. It
+%%   should be the opposite of <a href="#Module:init-1">Module:init/1</a> and do
+%%   any necessary cleaning up. When it returns, the `gen_trans' terminates with
 %%   `Reason'. The return value is ignored.
 %%
-%%   `Reason' is a term denoting the stop reason and `State' is the
-%%   internal state of the `gen_trans'.
+%%   `Reason' is a term denoting the stop reason and `State' is the internal
+%%   state of the `gen_trans'.
 %%
-%%   `Reason' depends on why the `gen_trans' is terminating. If it is
-%%   because another callback function has threw an error, `Reason'
-%%   will have the value of the thrown error. Otherwise, the
-%%   `gen_trans' terminate `Reason=normal'.
+%%   `Reason' depends on why the `gen_trans' is terminating. If it is because
+%%   another callback function has threw an error, `Reason' will have the value
+%%   of the thrown error. Otherwise, the `gen_trans' terminate `Reason=normal'.
 %%
 %% </div>
 %%
 %% <br/>
 %% == Error Information ==
 %%
-%% The `ErrorInfo' mentioned above is the standard `ErrorInfo'
-%% structure which is returned from all IO modules. It has the
-%% following format:
+%% The `ErrorInfo' mentioned above is the standard `ErrorInfo' structure which
+%% is returned from all IO modules. It has the following format:
 %%
 %% <div class="example">
 %%```{ErrorLine, Module, ErrorDescriptor}'''
 %% </div>
 %%
-%% A string which describes the error is obtained with the following
-%% call:
+%% A string which describes the error is obtained with the following call:
 %%
 %% <div class="example">
 %%```apply(Module, format_error, ErrorDescriptor)'''

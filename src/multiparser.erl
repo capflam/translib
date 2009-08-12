@@ -22,20 +22,20 @@
 %% @version {@vsn} - {@date}
 %% @end
 
-%% @doc Parse_transform that can perform several parse_transformations
+%% @doc Parse transformer that can perform several parse_transformations
 %%
-%% This module implements the parse_transform that can perform many
-%% successive transformations. Each transformation takes place in
-%% module that implements the {@link gen_trans} behaviour.  The
-%% parse_tranformers chain is defined as an element of the compiler
-%% options list and follows the format `{chain, [ModuleName]}'.
+%% Performs parse transformation that can execute many successive
+%% transformations. Each transformation takes place in module that implements
+%% the {@link gen_trans} behaviour.  The parse_tranformers chain is defined as
+%% an element of the compiler options list and follows the format `{chain,
+%% [ModuleName]}'.
 %%
 %%
 %% <br/>
 %% == EXPORTS ==
 %%<a name="parse_transform-2"> </a>
 %%```
-%%parse_transform(Forms, Options) -> {ok, NewForms} | {error, Errors, []}
+%%parse_transform(Forms, Options) -> NewForms | {error, Errors, []}
 %%'''
 %% <div class="REFBODY">
 %%   Types:
@@ -50,37 +50,33 @@
 %%     '''
 %%   </div>
 %%
-%%   Implements the actual transformation at compile time. This
-%%   function is called by the compiler to do the source code
-%%   transformation if and when the option `{parse_transform,
-%%   multiparser}' is passed to the compiler.
+%%   Implements the actual transformation at compile time. This function is
+%%   called by the compiler to do the source code transformation if and when the
+%%   option `{parse_transform, multiparser}' is passed to the compiler.
 %%
-%%   This function loops through the list `[ModuleName]' and calls
-%%   {@link gen_trans:start/3} with `ModuleName' as callback
-%%   module. The Erlang abstract code format in entry of an iteration
-%%   is the result of the previous one.
+%%   This function loops through the list `[ModuleName]' and calls {@link
+%%   gen_trans:start/3} with `ModuleName' as callback module. The Erlang
+%%   abstract code format in entry of an iteration is the result of the previous
+%%   one.
 %%
-%%   If the abstract code format is successfully parsed, the function
-%%   returns `{ok, NewForms}'. if it fails the function returns
-%%   `{error, Errors, []}'.
+%%   If the abstract code format is successfully parsed, the function returns
+%%   `NewForms'. if it fails the function returns `{error, Errors, []}'.
 %%
-%%   See <a href="http://www.erlang.org/doc/man/compile.html">compile(3)</a>.
+%%   See [http://www.erlang.org/doc/man/compile.html compile(3)].
 %%
 %% </div>
 %%
 %% <br/>
 %% == Error Information ==
 %%
-%% The `ErrorInfo' mentioned above is the standard `ErrorInfo'
-%% structure which is returned from one of the chained modules. It has
-%% the following format:
+%% The `ErrorInfo' mentioned above is the standard `ErrorInfo' structure which
+%% is returned from one of the chained modules. It has the following format:
 %%
 %% <div class="example">
 %%```{ErrorLine, Module, ErrorDescriptor}'''
 %% </div>
 %%
-%% A string which describes the error is obtained with the following
-%% call:
+%% A string which describes the error is obtained with the following call:
 %%
 %% <div class="example">
 %%```apply(Module, format_error, ErrorDescriptor)'''

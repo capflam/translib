@@ -1,3 +1,14 @@
+2009-09-29  Christopher Faulet  <christopher.faulet@capflam.com>
+
+	* Version 0.2.1
+
+	* src/clone_module.erl: Bugfix in the anonymous function that
+	parses the source module. all "unknown" attributes are appended
+	into the list attribute_forms exept "spec" attributes that are
+	appended into the list other_forms. When the abstract tree is
+	rebuilt, the functions list is sorted in same time that the list
+	other_forms.
+
 2009-08-12  Christopher Faulet  <c.faulet@meetic-corp.com>
 
 	* Version 0.2.0

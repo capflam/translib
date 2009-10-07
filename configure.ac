@@ -4,7 +4,7 @@ dnl ------------------------------------------------------------------
 dnl Autoconf initialisation.
 dnl ------------------------------------------------------------------
 
-AC_INIT([translib], [0.2.0], [christopher.faulet@capflam.org], [translib])
+AC_INIT([translib], [0.2.1], [christopher.faulet@capflam.org], [translib])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([ac-aux])
 
@@ -165,10 +165,10 @@ AC_ERLANG_CHECK_LIB([eunit], [], [AC_MSG_WARN([eunit was not found!])])
 
 
 dnl Determine directories for installation.
-if test "x${prefix}" = "xNONE"; then
+if test "x${prefix}" = "xNONE" -a "x${ERLANG_INSTALL_LIB_DIR}" = "x"; then
 	# Inside Erlang lib dir
 	ERLANG_INSTALL_LIB_DIR="${ERLANG_LIB_DIR}"
-else
+elif test "x${prefix}" != "xNONE"; then
 	# Under $prefix
 	ERLANG_INSTALL_LIB_DIR="${prefix}/lib"
 fi

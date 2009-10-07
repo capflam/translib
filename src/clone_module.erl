@@ -253,6 +253,14 @@ parse({attribute, _Line, clone, {Mod, Args}}=Form,
                        ({eof, _}, S) -> S; %% ignore it
                        ({attribute, _, export, L}, S) ->
                             S#clone_infos{exports=L++S#clone_infos.exports};
+                       ({attribute, _, spec, _}=Spec, S) ->
+                            S#clone_infos{
+                              other_forms=[Spec|S#clone_infos.other_forms]
+                             };
+                       ({attribute, _, _, _}=A, S) ->
+                            S#clone_infos{
+                              attribute_forms=[A|S#clone_infos.attribute_forms]
+                             };
                        ({function, L, N, A, C}, S) ->
                             %% Parse clauses
                             {NewC, _} = parse(C, S),
@@ -308,7 +316,7 @@ parse({eof, Line}, State) ->
     OtherForms = State#clone_infos.other_forms,
 
     Forms = lists:keysort(2, Attributes) ++ [Exports] ++
-        lists:keysort(2, FunForms) ++ lists:keysort(2, OtherForms),
+        lists:keysort(2, FunForms ++ OtherForms),
     {Forms, {eof, Line}, [], State};
 
 

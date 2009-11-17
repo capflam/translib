@@ -17,6 +17,7 @@ HTML_FILES = 	index.html					\
 	    		packages-frame.html			\
 		     	gen_trans.html				\
 				lambda_expr.html			\
+				multiparser.html			\
 				recfun.html					\
 				clone_module.html			\
 				transhell.html

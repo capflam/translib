@@ -29,11 +29,11 @@
 %% his beam file (by default) or his source file. This transformation uses the
 %% abstract code of a module, the source module, and merges it with the abstract
 %% code of another one, the destination module. It copies all attributes and
-%% functions found in the abstract code of the source module, except `file' and
-%% `module' attributes. For functions with same name and arity in the source
-%% module and the destination module, we only keep the ones come from the
-%% destination module. To deal with this goal and make the parsing easier, This
-%% module also implements the {@link gen_trans} behaviour.
+%% functions found in the abstract code of the source module, except `module'
+%% attributes. For functions with same name and arity in the source module and
+%% the destination module, we only keep the ones coming from the destination
+%% module. To deal with this goal and make the parsing easier, This module
+%% also implements the {@link gen_trans} behaviour.
 %%
 %% To perform this kind of transformation, we must define the attribute `clone'
 %% following the syntax
@@ -48,8 +48,14 @@
 %% options. Supported options are:
 %%
 %% <ul>
-%%   <li>`{source, Filename}': `Filename' refers to an Erlang source file.</li>
+%%   <li>`{source, Filename}': `Filename' refers to an Erlang source file.
+%% it can be an abosulte name or a relative one.</li>
+%%   <li>`{source, {Apps, Filename}}': `Filename' refers to an Erlang source
+%% file. This is a relative name from the directory of the application `Apps'.
+%% `Apps' is an atom.</li>
 %%   <li>`{beam, Filename}': `Filename' refers to an Erlang beam file.</li>
+%%   <li>`{unused, [{Fun,Arity}]}': With this option, we can define a list of
+%% functions that are not cloned.</li>
 %% </ul>
 %%
 %% This is usefull to speficy the Erlang source file of a source module if we
@@ -64,7 +70,9 @@
 %%     <div class="example">
 %% ```
 %% -clone({lists, []}).
-%% -clone({lists, [{source, "/usr/lib/erlang/lib/stdlib-1.15.5/src/lists.erl"}]}).
+%% -clone({lists, [{source, {"/usr/lib/erlang/lib/stdlib-1.15.5/src/lists.erl"}]}).
+%% -clone({lists, [{source, {stdlib, "src/lists.erl"}}]}).
+%% -clone({string, [{unused, [{to_float, 1}, {to_integer, 1}]}]}).
 %% '''
 %%     </div>
 %%
@@ -172,7 +180,8 @@
                       attribute_forms=[],
                       exports=[],
                       function_forms={[], []},
-                      other_forms=[]}).
+                      other_forms=[],
+                      options}).
 
 -define(ERR_REDEFINE_CLONE,   redefine_clone).
 -define(ERR_MODULE_NOT_FOUND, no_module).
@@ -225,8 +234,8 @@ format_error(Error) ->
 %% Parser API
 %%====================================================================
 %% @hidden
-init(_Options) ->
-    {ok, #clone_infos{}}.
+init(Options) ->
+    {ok, #clone_infos{options=Options}}.
 
 %% @hidden
 terminate(_Reason, _State) ->
@@ -236,7 +245,8 @@ terminate(_Reason, _State) ->
 %% get the module name
 parse({attribute, _Line, module, Mod}=Form,
       #clone_infos{attribute_forms=Attrs}=State) ->
-    {[], State#clone_infos{local_module=Mod, attribute_forms=[Form|Attrs]}};
+    {[], State#clone_infos{local_module=Mod,
+                           attribute_forms=[Form|Attrs]}};
 
 %% Find a clone attribute. Try to get the Erlang abstract code of the given
 %% module
@@ -245,37 +255,17 @@ parse({attribute, _Line, clone, {Mod, Args}}=Form,
                                                        is_list(Args) ->
     AC = case proplists:get_value(source, Args) of
              undefined -> load_from_beam(proplists:get_value(beam, Args, Mod));
-             SrcFile   -> load_from_source(SrcFile)
+             SrcFile   -> load_from_source(SrcFile, State#clone_infos.options)
          end,
-    NewState =
-        lists:foldl(fun({attribute, _, file, _}, S) -> S; %% ignore it
-                       ({attribute, _, module, _}, S) -> S; %% ignore it
-                       ({eof, _}, S) -> S; %% ignore it
-                       ({attribute, _, export, L}, S) ->
-                            S#clone_infos{exports=L++S#clone_infos.exports};
-                       ({attribute, _, spec, _}=Spec, S) ->
-                            S#clone_infos{
-                              other_forms=[Spec|S#clone_infos.other_forms]
-                             };
-                       ({attribute, _, _, _}=A, S) ->
-                            S#clone_infos{
-                              attribute_forms=[A|S#clone_infos.attribute_forms]
-                             };
-                       ({function, L, N, A, C}, S) ->
-                            %% Parse clauses
-                            {NewC, _} = parse(C, S),
-                            F = {function, L, N, A, NewC},
-                            {Local, Cloned} = S#clone_infos.function_forms,
-                            S#clone_infos{function_forms={Local, [F|Cloned]}};
-                       (F, S) ->
-                            S#clone_infos{
-                              other_forms=[F|S#clone_infos.other_forms]
-                             }
-                    end, State#clone_infos{clone_module=Mod}, AC),
-    {[], NewState#clone_infos{
-           clone_module=Mod,
-           attribute_forms=[Form|NewState#clone_infos.attribute_forms]
-          }};
+    Opts = Args++State#clone_infos.options,
+    NewState = lists:foldl(fun parse_source_module/2,
+                           State#clone_infos{clone_module=Mod, options=Opts},
+                           AC),
+    {[],
+     NewState#clone_infos{
+       clone_module=Mod,
+       attribute_forms=[Form|NewState#clone_infos.attribute_forms]
+      }};
 parse({attribute, _, clone, {_, _}},
       #clone_infos{clone_module=_M}) when _M /= undefined ->
     erlang:error(?ERR_REDEFINE_CLONE);
@@ -314,9 +304,7 @@ parse({eof, Line}, State) ->
                                         end, ClonedFuns, LocalFuns),
 
     OtherForms = State#clone_infos.other_forms,
-
-    Forms = lists:keysort(2, Attributes) ++ [Exports] ++
-        lists:keysort(2, FunForms ++ OtherForms),
+    Forms = Attributes ++ [Exports] ++ lists:keysort(2, FunForms ++ OtherForms),
     {Forms, {eof, Line}, [], State};
 
 
@@ -355,19 +343,73 @@ load_from_beam(Mod) ->
             erlang:error({?ERR_BEAM_LIB, Error})
     end.
 
-load_from_source(File) ->
+load_from_source({Apps, File}, Opts) ->
+    case code:lib_dir(Apps) of
+        {error, bad_name} -> erlang:error(?ERR_SOURCE_NOT_FOUND);
+        AppsPath -> load_from_source(filename:join(AppsPath, File), Opts)
+    end;
+load_from_source(File, Opts) ->
     case filelib:is_file(File) of
         true  -> ok;
         false -> erlang:error(?ERR_SOURCE_NOT_FOUND)
     end,
-    AC = case epp:parse_file(File, [], []) of
+    IncPath = [".", filename:dirname(File)|inc_paths(Opts)],
+    Pdm = pre_defs(Opts),
+    AC = case epp:parse_file(File, IncPath, Pdm) of
              {ok, Forms} -> Forms;
              {error, Error} -> erlang:error({?ERR_EPP, Error})
          end,
-    case erl_lint:module(AC) of
+    case erl_lint:module(AC, File, Opts) of
         {ok, _} -> AC;
         {error, Errors, _} -> erlang:error({?ERR_LINTER, Errors})
     end.
 
+%%====================================================================
+parse_source_module({attribute, _, module, _}, S) -> S; %% ignore it
+parse_source_module({attribute, _, compile, _}, S) -> S; %% ignore it
+parse_source_module({eof, _}, S) -> S; %% ignore it
+parse_source_module({attribute, _, export, L}, S) ->
+    UnusedFuns = case proplists:get_value(unused, S#clone_infos.options) of
+                     undefined -> [];
+                     Res -> Res
+                 end,
+    ExportedFun = [X || X <- L, not lists:member(X, UnusedFuns)],
+    S#clone_infos{exports=ExportedFun++S#clone_infos.exports};
+parse_source_module({attribute, _, spec, _}=Spec, S) ->
+    S#clone_infos{other_forms=[Spec|S#clone_infos.other_forms]};
+parse_source_module({attribute, _, _, _}=A, S) ->
+    S#clone_infos{attribute_forms=[A|S#clone_infos.attribute_forms]};
+parse_source_module({function, L, N, A, C}, S) ->
+    UnusedFuns = case proplists:get_value(unused, S#clone_infos.options) of
+                     undefined -> [];
+                     Res -> Res
+                 end,
+    case lists:member({N,A}, UnusedFuns) of
+        true ->
+            S;
+        false ->
+            %% Parse clauses
+            {NewC, _} = parse(C, S),
+            F = {function, L, N, A, NewC},
+            {Local, Cloned} = S#clone_infos.function_forms,
+            S#clone_infos{function_forms={Local, [F|Cloned]}}
+    end;
+parse_source_module(F, S) ->
+    S#clone_infos{other_forms=[F|S#clone_infos.other_forms]}.
 
 %%====================================================================
+%% from compile.erl:
+%%   pre_defs(Options)
+%%   inc_paths(Options)
+%% Extract the predefined macros and include paths from the option list.
+
+pre_defs([{d,M,V}|Opts]) ->
+    [{M,V}|pre_defs(Opts)];
+pre_defs([{d,M}|Opts]) ->
+    [M|pre_defs(Opts)];
+pre_defs([_|Opts]) ->
+    pre_defs(Opts);
+pre_defs([]) -> [].
+
+inc_paths(Opts) ->
+    [P || {i,P} <- Opts, is_list(P)].

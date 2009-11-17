@@ -1,3 +1,15 @@
+2009-11-17  Christopher Faulet  <christopher.faulet@capflam.org>
+
+	* Version 0.2.2
+
+	* src/clone_module.erl: Add the compiler options in the record
+	#clone_infos. We use these options when we parse the source
+	module. New options are supported by the clone attribute. The
+	parsing of the source module are deported in a new function,
+	parse_source_module.
+	* src/transhell.erl: Use the source of the shell module to clone
+	it instead of the beam file.
+
 2009-09-29  Christopher Faulet  <christopher.faulet@capflam.org>
 
 	* Version 0.2.1

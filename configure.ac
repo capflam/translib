@@ -4,7 +4,7 @@ dnl ------------------------------------------------------------------
 dnl Autoconf initialisation.
 dnl ------------------------------------------------------------------
 
-AC_INIT([translib], [0.2.1], [christopher.faulet@capflam.org], [translib])
+AC_INIT([translib], [0.2.2], [christopher.faulet@capflam.org], [translib])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([ac-aux])
 

@@ -65,7 +65,7 @@
 
 -compile([{parse_transform, clone_module}]).
 
--clone({shell, []}).
+-clone({shell, [{source, {stdlib, "src/shell.erl"}}]}).
 
 
 -define(DEF_PARSE_TRANSFORM, [recfun, lambda_expr]).

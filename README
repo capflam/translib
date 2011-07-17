@@ -1,0 +1,27 @@
+Translib is for Transformer Library. Translib is an Erlang application that
+contains some parse transformers to extend or modify the semantic of Erlang.
+
+For the moment, Translib contains 6 modules:
+
+    * gen_trans: a behaviour module for implementing a parse transformer of
+      Erlang code.
+
+    * lambda_expr: a transformer that simplifies the partial application and the
+      composistion of functions in Erlang.
+
+    * recfun: a transformer that makes possible to easily write recursive
+      anonymous function.
+
+    * clone_module: a transformer that builds modules by cloning the content of
+      another one.
+
+    * multiparser: a "meta" transformer that can perform several
+      parse_transformations.
+
+    * transhell: a "clone" of the Erlang shell that transforms expressions
+      before evaluation calling a multiparser transformer.
+
+
+TODO:
+    Finish the edoc documentation
+    Add type specification in modules
